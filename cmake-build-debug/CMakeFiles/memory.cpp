@@ -2,22 +2,24 @@
 // Created by Alena Pashkevich on 12.09.2018.
 //
 #include <memory.h>
+#include <bfd.h>
 #include "stdlib.h"
-
+#include "stdbool.h"
 
 typedef char* VA;
 
-struct LinkedList {
-    int info;
-    struct LinkedList *next, *prev;
-} *begin, *end;
+struct Cell {
+    char info;
+    bool isFree;
+    bool isStart;
+    bool isEnd;
+};
 
-struct cache {
-    int info;
-    struct cache *next, *prev;
-} *beginK, *endK;
-
-
+struct CellCache {
+    int address;
+    int time; //сюда нужно вписывать вот это штуку с времнной локальностью, что тип, что название меняю, ибо я писала от балды
+    bool isModified;
+};
 
 /**
  	@func	_init
@@ -35,32 +37,26 @@ struct cache {
  **/
 
 int _init (int n, int szPage) {
-    struct LinkedList **end;
-    struct LinkedList **begin;
-    begin = end = NULL;
-    struct linkedList *element;
-    if(!(element = (struct linkedList *) calloc (1, szPage))) { return 1; }
-    *begin = *end = element;
-    for (int i = 0; i < n - 1; i++) {
-        struct linkedList *element;
-        if(!(element = (struct linkedList *) calloc (1, szPage))) {return 1;}
-        element -> next = *end;
-        (*end) -> prev = element;
-        *end = element;
+    struct Cell memory[n];
+
+    for(int i = 0; i < n*szPage; i++){
+        memory[i].isFree = true;
+        memory[i].isStart = false;
+        memory[i].isStart = false;
+    }
+    for(int i = 0; i < n*szPage; i+= szPage){
+        memory[i].isStart = true;
+    }
+    for(int i = szPage - 1; i < n*szPage; i+= szPage){
+        memory[i].isEnd = true;
     }
 
-    struct cache **endK;
-    struct cache **beginK;
-    beginK = endK = NULL;
-    struct cache *elementK;
-    if (!(elementK = (struct cache *) calloc (1, szPage))) { return 1; }
-    *beginK = *endK = elementK;
-    for (int i = 0; i < 5; i++) {
-        struct linkedList *elementK;
-        if (!(elementK = (struct cache *) calloc (1, szPage))) { return  1;}
-        elementK -> next = *endK;
-        (*endK) -> prev = elementK;
-        *endK = elementK;
+    struct CellCache cache[4];
+
+    for(int i = 0; i < 4; i++){
+        cache[i].address = 0;
+        cache[i].isModified = false;
+        cache[i].time = 0;
     }
     return 0;
 }
@@ -74,13 +70,49 @@ int _init (int n, int szPage) {
 
 	@return	код ошибки
 	@retval	0	успешное выполнение
-	@retval	-1	неверные параметры
+	@retval	-1	неверные параметры   //хз
 	@retval	-2	нехватка памяти
+	@retval	1	неизвестная ошибка  // хз
+ **/
+int _malloc (VA* ptr, size_t szBlock) {
+    int endOfBlock;
+    int szPage = 10;
+    int n = 10; // здесь нужно как-то передать нашу память или сделать её глобальной хз
+    struct Cell memory[n];
+
+    for (int i = 0; i < n*szPage; i++){
+        if (memory[i].isFree){
+            for (int j = 0; j < szBlock; j++){
+                if (!memory[j].isFree){
+                    i = j;
+                    break;
+                }
+                if (j == (szBlock-1)){
+                    endOfBlock = j;
+                    for (int k = endOfBlock; k > endOfBlock - szBlock; k--){
+                        memory[k].isFree = false;
+                        if(k == endOfBlock - szBlock - 1){
+                           //k - индекс с которого можно начинать записывать
+                            return 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return -2;
+}
+
+/**
+ 	@func	_free
+ 	@brief	Удаление блока памяти
+
+	@param	[in] ptr		адресс блока
+
+	@return	код ошибки
+	@retval	0	успешное выполнение
+	@retval	-1	неверные параметры
 	@retval	1	неизвестная ошибка
  **/
-int _malloc (struct LinkedList* element, size_t szBlock){
-    size_t
-    if(element -> info != NULL){
-
-    }
-}
+int _free (VA ptr);
